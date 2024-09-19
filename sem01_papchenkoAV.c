@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <time.h>
+// #include <time.h>
+#include <sys/time.h>
 
 double total_area = 0.0; // Общая площадь
 pthread_mutex_t mutex;   // Мьютекс для защиты общей переменной
@@ -56,7 +57,9 @@ int main(int argc, char* argv[]) {
     pthread_mutex_init(&mutex, NULL);
 
 
-    clock_t start_time = clock();
+    // clock_t start_time = clock();
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
 
     // Создание потоков
     for (int i = 0; i < num_threads; i++) {
@@ -76,8 +79,13 @@ int main(int argc, char* argv[]) {
     pthread_mutex_destroy(&mutex);
 
 
-    clock_t end_time = clock();
-    double time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC; // измеряем время и прииводим к секундам 
+    // clock_t end_time = clock();
+    // double time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC; // измеряем время и прииводим к секундам 
+    gettimeofday(&end, NULL);
+
+    
+    double time_spent = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6;
+
 
     // Вывод результата
     printf("Приблизительное значение π : %.10f\n", total_area);
