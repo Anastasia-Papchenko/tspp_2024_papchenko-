@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
     double time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC; // измеряем время и прииводим к секундам 
 
     // Вывод результата
-    printf("Приблизительное значение π: %.10f\n", total_area);
+    printf("Приблизительное значение π : %.10f\n", total_area);
     printf("Время работы: %.6f секунд\n", time_spent);
 
     return 0;
