@@ -10,16 +10,21 @@
 
 MyConcurrentQueue my_queue;
 
+int numberOfProducers;
+int numberOfConsumers;
+
 void* producer_func(void* params) {
     int thread_id = *((int*)params);
-    for (int i = 0; i < 100000; i++) {
+    int numberOfElements = *(int*)params + 100000 * numberOfConsumers;
+    for (int i = 0; i < numberOfElements; i++) {
         my_queue.put(thread_id * 100000 + i); 
     }
     return NULL;
 }
 
 void *consumer_func(void *params) {
-    for (int i = 0; i < 100000; i++) {
+    int numberOfElements = *(int*)params + 100000 * numberOfProducers;
+    for (int i = 0; i < numberOfElements; i++) {
         int a = my_queue.get();
         assert(a >= 0);
     }
@@ -32,8 +37,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    int numberOfProducers = std::atoi(argv[1]);
-    int numberOfConsumers = std::atoi(argv[2]);
+    numberOfProducers = std::atoi(argv[1]);
+    numberOfConsumers = std::atoi(argv[2]);
 
     my_queue.reserve(1000);
 
