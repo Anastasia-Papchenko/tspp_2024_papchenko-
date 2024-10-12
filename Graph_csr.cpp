@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include "papi.h"
+#include <algorithm>
 
 class CSR_graph {
     int row_count; //количество вершин
@@ -66,6 +67,22 @@ public:
         return max_vertex;
     }
 
+//Поиск вершины с наибольшим рангом с помощью сортировка
+    int find_highest_weight_vertex() {
+        std::vector<std::pair<int, double>> weights(row_count);
+
+        for (int i = 0; i < row_count; i++) {
+            weights[i] = {i, calculate_weight(i)};
+        }
+
+        // Сортировка по весу в порядке убывания
+        std::sort(weights.begin(), weights.end(), [](const auto& a, const auto& b) {
+            return a.second > b.second; 
+        });
+
+        return weights.front().first; // Возвращаем индекс вершины с наибольшим рангом
+    }
+
     //Сбрасываем состояние графа
     void reset() {
         row_count = 0;
@@ -79,6 +96,9 @@ public:
 #define N_TESTS 5
 
 int main() {
+
+    int retval;
+    int EventCode;
     //объеденила в один запуск
     const char* filenames[N_TESTS] = {
         "synt",
@@ -93,28 +113,60 @@ int main() {
         a.read(filenames[n_test]);
 
         // Инициализация PAPI
-        int retval;
+        
         if ((retval = PAPI_library_init(PAPI_VER_CURRENT)) != PAPI_VER_CURRENT) {
             std::cerr << "PAPI library init error!" << std::endl;
             return -1;
         }
 
-        long long values[3];
+
+
+
+        long long values[2];
         int event_set = PAPI_NULL;
-        
-        PAPI_create_eventset(&event_set);
-        
-        // Добавление событий PAPI_L1_TCM и PAPI_L2_TCM
-        PAPI_add_event(event_set, PAPI_L1_TCM);
-       
-        
-        // Если поддерживается, добавляем PAPI_L2_TCM
-        if (PAPI_add_event(event_set, PAPI_L2_TCM) != PAPI_OK) {
-            std::cerr << "L2 Cache event not available." << std::endl;
+
+        retval = PAPI_event_name_to_code("PAPI_TOT_INS", &event_set);
+        if ( retval != PAPI_OK) {
+            printf("PAPI_event_name_to_code error %d n", retval);
+        }
+
+        if (PAPI_query_event(EventCode) != PAPI_OK) {
+            printf("Can not measure %d event ", EventCode);
+        } else {
+            printf("Will be succeeded in measuring %d event ", EventCode);
         }
         
-        // Добавление события PAPI_TOT_CYC
-        PAPI_add_event(event_set, PAPI_TOT_CYC);
+        if (PAPI_create_eventset(&event_set) != PAPI_OK) {
+            printf("PAPI_create_eventset error!n");
+            // exit(1);
+        }
+
+        // values[0]
+        
+        PAPI_add_event(event_set, PAPI_L1_TCM);
+       
+        // values[1]
+
+        if (PAPI_add_event(event_set, PAPI_L2_DCM) != PAPI_OK) {
+            std::cerr << "L2 Cache event not available." << std::endl;
+        }
+
+        // values[3]
+    
+        if (PAPI_add_event(event_set, EventCode) != PAPI_OK) {
+            printf("PAPI_add_event error !n");
+            // exit(1);
+        }
+
+        unsigned int native = 0x0;
+        PAPI_event_info_t info;
+
+        if (PAPI_get_event_info(EventCode, &info) != PAPI_OK) {
+            printf("Error in get event_infon");
+            // exit(1);
+        }
+
+        printf("n%d, %s, count: %sn     ", info.event_code, info.symbol, info.short_descr);
 
 
         // Начало отслеживания событий
@@ -122,14 +174,45 @@ int main() {
 
         // Алгоритм для нахождения вершины с наибольшим рангом
         int highest_rank_vertex = a.find_highest_rank_vertex();
+        // int highest_weight_vertex = a.find_highest_weight_vertex();
 
         // Остановка отслеживания событий
         PAPI_stop(event_set, values);
 
-        std::cout << "Название теста: " << filenames[n_test] << ", Индекс вершины с наибольшим рангом: " << highest_rank_vertex 
-                  << ", Кэш-промах L1: " << values[0] << ", Кэш-промах L2: " << (PAPI_add_event(event_set, PAPI_L2_TCM) == PAPI_OK ? values[1] : 0)  
-                  << ", Общее количество циклов: " << values[2] << std::endl;
+        std::cout << "Название теста: " << filenames[n_test] << ", Алгоритм 1 - Индекс вершины с наибольшим рангом: " << highest_rank_vertex 
+                  << ", Кэш-промах L1: " << values[0] << ", Кэш-промах L2: " << (PAPI_add_event(event_set, PAPI_L2_DCM) == PAPI_OK ? values[1] : 0)  
+                  << std::endl;
+                //    << ", Общее количество циклов: " << values[2]
+        printf("values[2] = %lldn", values[2]);
+        // std::cout << "Тест: " << filenames[n_test] 
+        //            << ", Алгоритм 2 - Индекс вершины с наибольшим рангом: " << highest_weight_vertex 
+        //            << ", Кэш-промах L1: " << values[0] 
+        //            << ", Кэш-промах L2: " << (PAPI_add_event(event_set, PAPI_L2_ICA) == PAPI_OK ? values[1] : 0)
+        //            << ", Общее количество циклов: " << values[2] << std::endl;
 
+        // Сброс графа для следующего теста
+        // a.reset();
+
+         PAPI_start(event_set);
+
+        // Алгоритм для нахождения вершины с наибольшим рангом
+        // int highest_rank_vertex = a.find_highest_rank_vertex();
+        int highest_weight_vertex = a.find_highest_weight_vertex();
+
+        // Остановка отслеживания событий
+        PAPI_stop(event_set, values);
+
+        // std::cout << "Название теста: " << filenames[n_test] << ", Алгоритм 1 - Индекс вершины с наибольшим рангом: " << highest_rank_vertex 
+        //           << ", Кэш-промах L1: " << values[0] << ", Кэш-промах L2: " << (PAPI_add_event(event_set, PAPI_L2_ICA) == PAPI_OK ? values[1] : 0)  
+        //           << ", Общее количество циклов: " << values[2] << std::endl;
+
+        std::cout << "Тест: " << filenames[n_test] 
+                   << ", Алгоритм 2 - Индекс вершины с наибольшим рангом: " << highest_weight_vertex 
+                   << ", Кэш-промах L1: " << values[0] 
+                   << ", Кэш-промах L2: " << (PAPI_add_event(event_set, PAPI_L2_DCM) == PAPI_OK ? values[1] : 0)
+                    << std::endl;
+                    // << ", Общее количество циклов: " << values[2]
+        printf("values[2] = %lldn", values[2]);
         // Сброс графа для следующего теста
         a.reset();
     }
