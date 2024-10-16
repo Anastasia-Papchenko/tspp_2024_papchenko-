@@ -35,7 +35,7 @@ void matrix_multiply_vectorized(double *A, double *B, double *C) {
                
                 __m256d a_vec = _mm256_load_pd(&A[i * N + k]);
                
-                __m256d b_vec = _mm256_broadcast_pd(&B[k * N + j]);
+                __m256d b_vec = _mm256_broadcast_sd(&B[k * N + j]);
               
                 sum_vec = _mm256_add_pd(sum_vec, _mm256_mul_pd(a_vec, b_vec));
             }
