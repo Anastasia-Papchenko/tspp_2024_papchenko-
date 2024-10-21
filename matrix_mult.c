@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define N 2048 
+#define N 5 
 
 void initialize_matrices(double *A, double *B, double *C) {
     for (int i = 0; i < N; i++) {
@@ -27,52 +27,76 @@ void matrix_multiply_serial(double *A, double *B, double *C) {
 }
 
 
-void matrix_multiply_vectorized(double *A, double *B, double *C) {
+void matrix_multiply_vectorized(double* A, double* B, double* C) {
+    
+    for (int i = 0; i < N * N; i++) {
+        C[i] = 0.0;
+    }
+
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
-            __m256d sum_vec = _mm256_setzero_pd(); 
-            int k;
-            for (k = 0; k + 3 < N; k += 4) {
-                // Загрузка 4 значений из A
+             __m256d c_vec = _mm256_setzero_pd(); 
+           
+            for (int k = 0; k < N; k += 4) {
                 __m256d a_vec = _mm256_loadu_pd(&A[i * N + k]);
-                __m256d b_vec = _mm256_broadcast_sd(&B[k * N + j]);
-                sum_vec = _mm256_add_pd(sum_vec, _mm256_mul_pd(a_vec, b_vec));
+
+                
+                __m256d b_vec = _mm256_set_pd(
+                    (k + 3 < N) ? B[(k + 3) * N + j] : 0.0,
+                    (k + 2 < N) ? B[(k + 2) * N + j] : 0.0,
+                    (k + 1 < N) ? B[(k + 1) * N + j] : 0.0,
+                    (k < N) ? B[k * N + j] : 0.0
+                );
+               
+                c_vec = _mm256_add_pd(c_vec, _mm256_mul_pd(a_vec, b_vec));
             }
+
             
-            // double temp[4];
-            __attribute__ ((aligned (32))) double temp[4];
-
-            _mm256_store_pd(temp, sum_vec);
-            C[i * N + j] += temp[0] + temp[1] + temp[2] + temp[3];
-
-            // Обычная обработка оставшихся элементов (если есть)
-            for (; k < N; k++) {
-                C[i * N + j] += A[i * N + k] * B[k * N + j];
-            }
+            double c_values[4];
+            _mm256_storeu_pd(c_values, c_vec);
+            C[i * N + j] += c_values[0] + c_values[1] + c_values[2] + c_values[3];
         }
     }
 }
 
-// Пока не нужно 
+
+void print_matrix(double* matrix) {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            printf("%f ", matrix[i * N + j]);
+        }
+        printf("\n");
+    }
+    printf("\n \n");
+}
+
+
 // void matrix_multiply_vectorized(double *A, double *B, double *C) {
 //     for (int i = 0; i < N; i++) {
 //         for (int j = 0; j < N; j++) {
-//             __m256d sum_vec = _mm256_setzero_pd();
-//             for (int k = 0; k < N; k += 4) {
-               
-//                 __m256d a_vec = _mm256_load_pd(&A[i * N + k]);
-               
+//             __m256d sum_vec = _mm256_setzero_pd(); 
+//             int k;
+//             for (k = 0; k + 3 < N; k += 4) {
+//               
+//                 __m256d a_vec = _mm256_loadu_pd(&A[i * N + k]);
 //                 __m256d b_vec = _mm256_broadcast_sd(&B[k * N + j]);
-              
 //                 sum_vec = _mm256_add_pd(sum_vec, _mm256_mul_pd(a_vec, b_vec));
 //             }
-         
-//             double temp[4];
+            
+//             // double temp[4];
+//             __attribute__ ((aligned (32))) double temp[4];
+
 //             _mm256_store_pd(temp, sum_vec);
 //             C[i * N + j] += temp[0] + temp[1] + temp[2] + temp[3];
+
+//           
+//             for (; k < N; k++) {
+//                 C[i * N + j] += A[i * N + k] * B[k * N + j];
+//             }
 //         }
 //     }
 // }
+
 
 int main() {
     // double *A = (double *)_mm_malloc(N * N * sizeof(double), 32);
@@ -91,7 +115,12 @@ int main() {
    
     start_time = omp_get_wtime();
     matrix_multiply_serial(A, B, C_serial);
+
+    
     end_time = omp_get_wtime();
+    print_matrix(A);
+    print_matrix(B);
+    print_matrix(C_serial);
     printf("Serial Time: %lf secondsn \n ", end_time - start_time);
 
 
@@ -99,19 +128,22 @@ int main() {
     start_time = omp_get_wtime();
     matrix_multiply_vectorized(A, B, C_vectorized);
     end_time = omp_get_wtime();
+    print_matrix(A);
+    print_matrix(B);
+    print_matrix(C_vectorized);
     printf("Vectorized Time: %lf secondsn \n", end_time - start_time);
 
    
-    // for (int i = 0; i < N; i++) {
-    //     for (int j = 0; j < N; j++) {
-    //         if (fabs(C_serial[i * N + j] - C_vectorized[i * N + j]) > 1e-6) {
-    //             printf("Results do not match at (%d, %d)n", i, j);
-    //             return -1;
-    //         }
-    //     }
-    // }
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            if (fabs(C_serial[i * N + j] - C_vectorized[i * N + j]) > 1e-6) {
+                printf("Results do not match at (%d, %d)n", i, j);
+                return -1;
+            }
+        }
+    }
 
-    // printf("Results match!n");
+    printf("Results match!\n");
 
     // _mm_free(A);
     // _mm_free(B);
