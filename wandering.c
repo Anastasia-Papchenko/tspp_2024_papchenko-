@@ -3,12 +3,12 @@
 #include <omp.h>
 #include <time.h>
 
-void random_walk(int a, int b, double p, int x, int* count_a, int* count_b) {
+void random_walk(int a, int b, double p, int x, int* count_a, int* count_b, unsigned int* seed) {
     int position = x;
  
 
     while (position > a && position < b) {
-        double rand_val = (double) rand() / RAND_MAX; 
+        double rand_val = (double) rand_r(seed) / RAND_MAX; 
         if (rand_val < p) { 
             position++;
         } else {
@@ -46,6 +46,8 @@ int main(int argc, char* argv[]) {
     int count_a = 0;
     int count_b = 0;
 
+   
+
     double start_time = omp_get_wtime();
 
    
@@ -55,10 +57,12 @@ int main(int argc, char* argv[]) {
         int private_count_a = 0;
         int private_count_b = 0;
 
+        unsigned int seed = omp_get_thread_num() + time(NULL);
+        
 
         #pragma omp for
         for (int i = 0; i < N; i++) {
-            random_walk(a, b, p, x, &private_count_a, &private_count_b);
+            random_walk(a, b, p, x, &private_count_a, &private_count_b, &seed);
         }
 
 
@@ -85,3 +89,4 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+
