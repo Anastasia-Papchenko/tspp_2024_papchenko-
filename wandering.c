@@ -57,9 +57,14 @@ int main(int argc, char* argv[]) {
         int private_count_a = 0;
         int private_count_b = 0;
 
-        unsigned int seed = omp_get_thread_num() + time(NULL);
-        
+        unsigned int seed = omp_get_thread_num();
 
+         #pragma omp critical
+        {
+            printf("Thread %d seed: %u\n", omp_get_thread_num(), seed);
+        }
+        
+        
         #pragma omp for
         for (int i = 0; i < N; i++) {
             random_walk(a, b, p, x, &private_count_a, &private_count_b, &seed);
