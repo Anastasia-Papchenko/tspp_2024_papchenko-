@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <omp.h>
+#include <iostream>
+#include <vector>
 
 void merge(int* arr, int* temp, int left, int mid, int right) {
     int i = left; 
@@ -47,6 +49,17 @@ void merge_sort(int* arr, int* temp, int left, int right) {
 int cmpfunc(const void* a, const void* b) {
     return (*(int*)a - *(int*)b);
 }
+
+
+bool check(int* arr, int N) {
+    for (int i = 0; i < N - 1; ++i) {
+        if (arr[i] > arr[i + 1]) {
+            return false; 
+        }
+    }
+    return true; 
+}
+
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
@@ -101,6 +114,18 @@ int main(int argc, char* argv[]) {
     //     printf("%d ", arr[i]);
     // }
     // printf("\n");
+
+    if (check(arr, N)) {
+        std::cout << "Массив не убывает (arr)." << std::endl;
+    } else {
+        std::cout << "Массив убывает (arr)." << std::endl;
+    }
+
+    if (check(arr_copy, N)) {
+        std::cout << "Массив не убывает (arr_copy)." << std::endl;
+    } else {
+        std::cout << "Массив убывает (arr_copy)." << std::endl;
+    }
 
 
     printf("Time qsort: %lf sec\n", time_qsort);
