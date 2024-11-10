@@ -35,16 +35,6 @@ int is_power_of_two(int n) {
     return (n && !(n & (n - 1)));
 }
 
-int PMPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
-    
-    return MPI_Send(buf, count, datatype, dest, tag, comm);  
-}
-
-int PMPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status) {
-   
-    return MPI_Recv(buf, count, datatype, source, tag, comm, status);  
-}
-
 int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
 
@@ -62,9 +52,9 @@ int main(int argc, char **argv) {
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
-    N = atoi(argv[1]); 
+    N = atoi(argv[1]); /
 
-    
+   
     if (!is_power_of_two(N)) {
         if (rank == 0) {
             printf("Error: The grid size N (%d) must be a power of two.\n", N);
@@ -91,15 +81,15 @@ int main(int argc, char **argv) {
 
     for (int iter = 0; iter < N_ITER; iter++) {
         if (rank > 0) {
-            PMPI_Send(subgrid, N, MPI_INT, rank - 1, 0, MPI_COMM_WORLD);
-            PMPI_Recv(&subgrid[0], N, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Send(subgrid, N, MPI_INT, rank - 1, 0, MPI_COMM_WORLD);
+            MPI_Recv(&subgrid[0], N, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
         if (rank < size - 1) {
-            PMPI_Send(&subgrid[(rows_per_process - 1) * N], N, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
-            PMPI_Recv(&subgrid[rows_per_process * N], N, MPI_INT, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Send(&subgrid[(rows_per_process - 1) * N], N, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
+            MPI_Recv(&subgrid[rows_per_process * N], N, MPI_INT, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
 
-       
+      
         for (int i = 1; i < rows_per_process - 1; i++) {
             for (int j = 1; j < N - 1; j++) {
                 new_subgrid[i * N + j] = 0.25 * (subgrid[(i - 1) * N + j] + 
@@ -108,13 +98,15 @@ int main(int argc, char **argv) {
                                                    subgrid[i * N + (j + 1)]);
             }
         }
-        
+
+       
         for (int i = 1; i < rows_per_process - 1; i++) {
             for (int j = 1; j < N - 1; j++) {
                 subgrid[i * N + j] = new_subgrid[i * N + j];
             }
         }
 
+        
         if (iter == N_ITER - 1) {
             double norm = calculate_norm(subgrid, new_subgrid, rows_per_process, N);
             printf("Process %d, Norm of difference: %f\n", rank, norm);
