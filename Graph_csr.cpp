@@ -147,7 +147,7 @@ int main() {
        
         // values[1]
 
-        if (PAPI_add_event(event_set, PAPI_L2_DCM) != PAPI_OK) {
+        if (PAPI_add_event(event_set, PAPI_L2_TCM) != PAPI_OK) {
             std::cerr << "L2 Cache event not available." << std::endl;
         }
 
@@ -180,7 +180,7 @@ int main() {
         PAPI_stop(event_set, values);
 
         std::cout << "Название теста: " << filenames[n_test] << ", Алгоритм 1 - Индекс вершины с наибольшим рангом: " << highest_rank_vertex 
-                  << ", Кэш-промах L1: " << values[0] << ", Кэш-промах L2: " << (PAPI_add_event(event_set, PAPI_L2_DCM) == PAPI_OK ? values[1] : 0)  
+                  << ", Кэш-промах L1: " << values[0] << ", Кэш-промах L2: " << (PAPI_add_event(event_set, PAPI_L2_TCM) == PAPI_OK ? values[1] : 0)  
                   << std::endl;
                 //    << ", Общее количество циклов: " << values[2]
         printf("values[2] = %lldn", values[2]);
@@ -209,7 +209,7 @@ int main() {
         std::cout << "Тест: " << filenames[n_test] 
                    << ", Алгоритм 2 - Индекс вершины с наибольшим рангом: " << highest_weight_vertex 
                    << ", Кэш-промах L1: " << values[0] 
-                   << ", Кэш-промах L2: " << (PAPI_add_event(event_set, PAPI_L2_DCM) == PAPI_OK ? values[1] : 0)
+                   << ", Кэш-промах L2: " << (PAPI_add_event(event_set, PAPI_L2_TCM) == PAPI_OK ? values[1] : 0)
                     << std::endl;
                     // << ", Общее количество циклов: " << values[2]
         printf("values[2] = %lldn", values[2]);
