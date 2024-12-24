@@ -68,6 +68,7 @@ int main(int argc, char **argv) {
     gettimeofday(&start, NULL);
 
     MPI_Datatype yz_face_type, xz_face_type, xy_face_type;
+    
 
     MPI_Type_vector(ny, nz, nz + 2, MPI_DOUBLE, &yz_face_type);
     MPI_Type_commit(&yz_face_type);
