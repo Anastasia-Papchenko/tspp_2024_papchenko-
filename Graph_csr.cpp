@@ -122,8 +122,8 @@ int main() {
     }
     PAPI_create_eventset(&Eventset);
 
-    PAPI_add_event(Eventset, PAPI_L1_TCM);
-    PAPI_add_event(Eventset, PAPI_L2_TCM);
+    PAPI_add_event(Eventset, PAPI_L1_DCM);
+    PAPI_add_event(Eventset, PAPI_L2_DCM);
     char event_name[] = "perf::PERF_COUNT_HW_CACHE_REFERENCES";
     PAPI_event_name_to_code(event_name, &code);
     PAPI_add_event(Eventset, code);
